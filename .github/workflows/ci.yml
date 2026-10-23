@@ -1,0 +1,22 @@
+name: Native checks
+on:
+  push:
+    branches: [main]
+  pull_request:
+permissions:
+  contents: read
+concurrency:
+  group: replica-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  test-build-replica:
+    runs-on: macos-14
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4, verified action commit
+        with:
+          persist-credentials: false
+      - name: Test deterministic engine and app state
+        run: swift test --jobs 2
+      - name: Build canonical neutral Replica edition
+        run: ./scripts/build.sh

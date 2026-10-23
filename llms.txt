@@ -1,0 +1,19 @@
+# Files Replica
+
+Files Replica is an experimental, independent macOS implementation of a limited folder-rule workflow. It is a partial recreation informed by the official Hazel manual, not a Hazel product, complete clone, or claim of full parity. The current public repository contains source only; it does not publish a downloadable app binary.
+
+## Project pages
+
+- [README](https://github.com/Ghostzy0/pip-files-replica)
+- [Getting started](https://github.com/Ghostzy0/pip-files-replica/blob/main/docs/GETTING-STARTED.md)
+- [FAQ](https://github.com/Ghostzy0/pip-files-replica/blob/main/docs/FAQ.md)
+- [AI setup prompt](https://github.com/Ghostzy0/pip-files-replica/blob/main/docs/AI-SETUP.md)
+- [Parity and gaps](https://github.com/Ghostzy0/pip-files-replica/blob/main/docs/PARITY.md)
+- [Testing evidence](https://github.com/Ghostzy0/pip-files-replica/blob/main/docs/TESTING.md)
+- [Reference notes](https://github.com/Ghostzy0/pip-files-replica/blob/main/docs/REFERENCE-NOTES.md)
+- [Roadmap](https://github.com/Ghostzy0/pip-files-replica/blob/main/docs/ROADMAP.md)
+- [License](https://github.com/Ghostzy0/pip-files-replica/blob/main/LICENSE)
+
+The neutral edition is built with `./scripts/build.sh`; `swift test --jobs 2` runs the checked-in test suite. These commands do not establish native workflow acceptance. See the testing and parity pages for evidence boundaries.
+
+The separate [Pip Files project](https://github.com/Ghostzy0/pip-files) contains custom Pip variants and an older generic workflow edition. It is not this neutral Replica edition, and its edition claims should not be transferred here.

@@ -1,0 +1,7 @@
+{
+  "Sources/FilesCore/FilesEngine.swift": "f2ef69bbe9caa45d3ccefe570d6c0ef8af8f75a7dbd45c73c428362027d52c41",
+  "Sources/FilesCore/HistoryReport.swift": "54c0622dca4eb3e55e0d53d8fbd15c552e9a35e7f1749b73b28632811a5be960",
+  "Sources/FilesCore/Models.swift": "62809760d7d1ac3cf0fd90ba769ce39d35c0d7d788ede68375406eeabb78b68b",
+  "Sources/FilesCore/SafeFileOperations.swift": "d321f49ad6c9de169a3df051f540caf142e6f5bf3d8f6c5b9fd721461a4f797a",
+  "Sources/FilesCore/ZipStore.swift": "05af30157937120ac6fe74cb9b251eabafa1416b748e98088ce526295f91a462"
+}
