@@ -25,6 +25,9 @@ struct EnhancedHistory: View {
 
     private var visibleRecords: [OperationRecord] { filter.apply(to: store.records) }
     private var palette: PipPalette { PipPalette(dark: appearance == "dark", oat: look == "oat") }
+    private var secondaryInk: Color {
+        FeatureEdition.current.referenceLayout ? Color.primary.opacity(0.75) : palette.secondary
+    }
     private var hasFilters: Bool {
         !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
         stateChoice != "all" || actionChoice != "all"
@@ -50,7 +53,7 @@ struct EnhancedHistory: View {
                 }.frame(width: 155)
             }
             HStack(spacing: PipSpace.row) {
-                Text(countText).foregroundStyle(.secondary)
+                Text(countText).foregroundStyle(secondaryInk)
                     .accessibilityLabel("Showing \(visibleRecords.count) of \(store.records.count) history actions")
                 Button("Reset filters") { reset() }.disabled(!hasFilters)
                 Spacer(minLength: 0)
@@ -58,7 +61,7 @@ struct EnhancedHistory: View {
                     .disabled(store.busy || !store.storageHealthy)
             }.font(.callout)
             HistoryRows(records: visibleRecords,
-                        emptyMessage: emptyMessage)
+                        emptyMessage: emptyMessage, secondaryInk: secondaryInk)
         }
         .sheet(item: $pendingExport) { snapshot in
             HistoryExportConfirmation(snapshot: snapshot, protectedRoot: store.root)
@@ -150,11 +153,11 @@ private struct HistoryExportConfirmation: View {
             Text("\(snapshot.count) \(snapshot.count == 1 ? "action" : "actions") from \(snapshot.scope).")
                 .textSelection(.enabled)
             Text("Captured \(snapshot.capturedAt.formatted(date: .abbreviated, time: .shortened)). The report includes source and destination paths, which may reveal private folder names.")
-                .foregroundStyle(.secondary)
+                .foregroundStyle(palette.secondary)
             Text("This is a report for review, not a backup you can restore. JSON keeps exact values and is recommended. CSV is for spreadsheets; spreadsheet formula protection is not universal.")
-                .foregroundStyle(.secondary)
+                .foregroundStyle(palette.secondary)
             Text("An empty result exports a report with no actions. Existing files cannot be replaced.")
-                .font(.callout).foregroundStyle(.secondary)
+                .font(.callout).foregroundStyle(palette.secondary)
             if !errorText.isEmpty {
                 Text(errorText).foregroundStyle(palette.danger).accessibilityAddTraits(.isStaticText)
             }
