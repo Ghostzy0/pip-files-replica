@@ -109,7 +109,7 @@ struct HistoryRows: View {
     private var visibleRecords: [OperationRecord] {records ?? store.records}
     var body: some View {
             LazyVStack(alignment:.leading,spacing:12) {
-                if visibleRecords.isEmpty {Text(emptyMessage ?? (store.storageHealthy ? "No operations yet. Applied changes and recovery details appear here." : "History is unavailable. Saved records are kept. Reopen after checking the data folder.")).foregroundStyle(secondaryInk ?? Color.secondary)}
+                if visibleRecords.isEmpty {Text(emptyMessage ?? (store.storageHealthy ? "No operations yet. Applied changes and recovery details appear here." : "History is unavailable. Saved records are kept. Reopen after checking the data folder.")).foregroundStyle(secondaryInk ?? Color.primary.opacity(0.75))}
                 ForEach(visibleRecords) {record in
                     VStack(alignment:.leading,spacing:4) {
                         HStack {Text(URL(fileURLWithPath:record.sourcePath).lastPathComponent).fontWeight(.semibold);Spacer();Text(record.state.rawValue.capitalized).font(.caption);if record.state == .completed && !store.records.contains(where: {$0.rowID == record.rowID && $0.state == .completed && $0.createdAt > record.createdAt}) {Button("Undo") {store.undo(record.id)}.disabled(store.busy)}}
@@ -119,8 +119,8 @@ struct HistoryRows: View {
                         HStack {Button("Reveal source folder") {NSWorkspace.shared.selectFile(nil,inFileViewerRootedAtPath:URL(fileURLWithPath:record.sourcePath).deletingLastPathComponent().path)};if let destination = record.destinationPath {Button("Reveal result folder") {NSWorkspace.shared.selectFile(nil,inFileViewerRootedAtPath:URL(fileURLWithPath:destination).deletingLastPathComponent().path)}}}.font(.caption)
                         if let recovery = record.recoveryPath {Text("Recovery file: \(recovery)").font(.caption).textSelection(.enabled);Button("Reveal recovery folder") {NSWorkspace.shared.selectFile(nil,inFileViewerRootedAtPath:URL(fileURLWithPath:recovery).deletingLastPathComponent().path)}.font(.caption)}
                         if record.state == .interrupted || record.state == .intent || record.state == .undoIntent {ForEach([record.stagingPath,record.undoStagingPath].compactMap {$0},id:\.self) {path in Text("Staging path: \(path)").font(.caption).textSelection(.enabled)}}
-                        Text(record.createdAt.formatted(date:.abbreviated,time:.shortened)).font(.caption).foregroundStyle(secondaryInk ?? Color.secondary)
-                        if record.issue != nil {Text(FileCopy.uncertain).font(.caption).foregroundStyle(secondaryInk ?? Color.secondary)}
+                        Text(record.createdAt.formatted(date:.abbreviated,time:.shortened)).font(.caption).foregroundStyle(secondaryInk ?? Color.primary.opacity(0.75))
+                        if record.issue != nil {Text(FileCopy.uncertain).font(.caption).foregroundStyle(secondaryInk ?? Color.primary.opacity(0.75))}
                         if record.state == .interrupted || record.state == .intent {Text("Outcome uncertain. Inspect both paths in Finder before doing anything else.").foregroundStyle(.red)}
                     }.padding(12).frame(maxWidth:.infinity,alignment:.leading).background(.quaternary.opacity(0.3),in:RoundedRectangle(cornerRadius:14))
                 }
