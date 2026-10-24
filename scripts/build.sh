@@ -32,6 +32,8 @@ else
 fi
 swift scripts/icon.swift "$stage_root/$edition.iconset" "$edition"
 iconutil -c icns "$stage_root/$edition.iconset" -o "$app/Contents/Resources/AppIcon.icns"
+cp LICENSE "$app/Contents/Resources/LICENSE"
+cp THIRD-PARTY-NOTICES.md "$app/Contents/Resources/THIRD-PARTY-NOTICES.md"
 cat > "$app/Contents/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
