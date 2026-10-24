@@ -150,17 +150,26 @@ private struct HistoryExportConfirmation: View {
     var body: some View {
         VStack(alignment: .leading, spacing: PipSpace.card) {
             Text("Export History report").font(.title2.weight(.semibold))
-            Text("\(snapshot.count) \(snapshot.count == 1 ? "action" : "actions") from \(snapshot.scope).")
-                .textSelection(.enabled)
-            Text("Captured \(snapshot.capturedAt.formatted(date: .abbreviated, time: .shortened)). The report includes source and destination paths, which may reveal private folder names.")
-                .foregroundStyle(palette.secondary)
-            Text("This is a report for review, not a backup you can restore. JSON keeps exact values and is recommended. CSV is for spreadsheets; spreadsheet formula protection is not universal.")
-                .foregroundStyle(palette.secondary)
-            Text("An empty result exports a report with no actions. Existing files cannot be replaced.")
-                .font(.callout).foregroundStyle(palette.secondary)
-            if !errorText.isEmpty {
-                Text(errorText).foregroundStyle(palette.danger).accessibilityAddTraits(.isStaticText)
+            ScrollView(.vertical) {
+                VStack(alignment: .leading, spacing: PipSpace.card) {
+                    Text("\(snapshot.count) \(snapshot.count == 1 ? "action" : "actions") from \(snapshot.scope).")
+                        .textSelection(.enabled)
+                    Text("Captured \(snapshot.capturedAt.formatted(date: .abbreviated, time: .shortened)). The report includes source and destination paths, which may reveal private folder names.")
+                        .foregroundStyle(palette.secondary)
+                    Text("This is a report for review, not a backup you can restore. JSON keeps exact values and is recommended. CSV is for spreadsheets; spreadsheet formula protection is not universal.")
+                        .foregroundStyle(palette.secondary)
+                    Text("An empty result exports a report with no actions. Existing files cannot be replaced.")
+                        .font(.callout).foregroundStyle(palette.secondary)
+                    if !errorText.isEmpty {
+                        Text(errorText)
+                            .foregroundStyle(palette.danger)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .accessibilityAddTraits(.isStaticText)
+                    }
+                }
+                .fixedSize(horizontal: false, vertical: true)
             }
+            .frame(minHeight: 180, idealHeight: 260, maxHeight: 360)
             HStack {
                 Button("Cancel") { dismiss() }.keyboardShortcut(.cancelAction)
                 Spacer()
