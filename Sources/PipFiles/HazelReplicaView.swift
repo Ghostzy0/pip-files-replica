@@ -263,7 +263,7 @@ private struct ReplicaRuleStatus: View {
     }
 
     @ViewBuilder private var previewBody: some View {
-        Text("This preview has not run any actions. Review each proposed change before applying.")
+        Text(FileCopy.previewInstruction)
             .foregroundStyle(.secondary)
         if store.busy {
             ProgressView("Checking files…")
