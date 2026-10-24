@@ -3,6 +3,8 @@ import FilesCore
 
 /// Shared native copy mapping. System diagnostics stay in the local journal.
 enum FileCopy {
+    static let previewInstruction = "Review the proposed changes before choosing Apply. Applied actions are recorded in History."
+
     static func previewReason(_ row:PreviewRow)->String? {
         guard let issue = row.issue else {return nil}
         if row.status == .skipped {
