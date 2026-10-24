@@ -3,7 +3,7 @@
   ".github/pull_request_template.md": "9c9fa21597db19a85b3157a757b20d23e60eb27e8ae29fcd1b970db065ecd318",
   ".github/workflows/ci.yml": "765fb1afa18d10e51880f7fd1ed234a6d0e17a1b9ca93924d5a08a8e4285caa8",
   ".gitignore": "98804de6e29b7725bc34939e01238c284295712d325fef53c41e0b7bb4ab1bb8",
-  "CHANGELOG.md": "0263fc4dfa77b13c23f6736c7535f17834e95778af5687fec9f0ab07b322cb53",
+  "CHANGELOG.md": "42bbdc1899740e419122fb095ce8f5ab68a4aae4fa4b500cf3e3318379d299f1",
   "CONTRIBUTING.md": "889b094440ce98a4c4dd8afdf6825bc134f766bd2294ce90e8c5e7a89bb25ebb",
   "CORE-SOURCE-MANIFEST.json": "fdfdf1efa17a06a268abc84d8fe81bde3bb425d3135f38ad3f4561175cde22af",
   "EXPORT-PROFILE.json": "4c9bf36a71d78dd852a631a2d18d85d8a11a1b5d54a526e37d06539a77a3dea4",
@@ -40,7 +40,7 @@
   "docs/ROADMAP.md": "85b7cd047b15418a659da3e799a5674ba290f27757a42a1be34e75bbab51469b",
   "docs/TESTING.md": "d10da82c945b5e3a0e02f34f1256c9dd7c46f3777aebb23127df46cfd7c79f9a",
   "llms.txt": "b5f9cc796739ecd97bf50ca54c1f95c54506473fd315d8f7a94f26bc56656430",
-  "scripts/build.sh": "b4f8e93b2dbff4c0ee64a0d8913df3de183998b93e7e1829485d36af5e91197a",
+  "scripts/build.sh": "f51ccc787529310b02565a9d66d1bd6e44cda35c20d3e94f782ec760429db218",
   "scripts/icon.swift": "ba939a818e3621ec6650df025c380fdb602c4a7a97f3eadeb4836017a00e3c3c",
   "scripts/promote.swift": "b9c42f6deb4bf115e1f21b097937526eed3e1f3136dcb3d95245255669640cc4",
   "scripts/test-promote.sh": "840571a025a6f836bc2805e163b8c17a00ce6dfa2e5cc69ee31ab2cc8d0d2e33"
