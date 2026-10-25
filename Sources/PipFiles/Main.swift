@@ -14,6 +14,8 @@ final class FilesAppDelegate:NSObject,NSApplicationDelegate,ObservableObject {
     private var windowDelegates:[ObjectIdentifier:WindowCloseDelegateProxy] = [:]
     private var discardCloseApprovals:Set<ObjectIdentifier> = []
     private var terminationReplyPending = false
+    private var activeExitAlert:NSAlert?
+    private var escapeMonitor:Any?
 
     func applicationShouldTerminate(_ sender:NSApplication)->NSApplication.TerminateReply {
         guard !terminationReplyPending else {return .terminateCancel}
@@ -21,8 +23,11 @@ final class FilesAppDelegate:NSObject,NSApplicationDelegate,ObservableObject {
         // overlapping quit request; the user can retry Quit after resolving it.
         if case .closeWindow = pendingExit {return .terminateCancel}
         guard FeatureEdition.current.referenceLayout, store?.hasUnsavedRuleChanges == true else {return .terminateNow}
+        guard pendingExit == nil, activeExitAlert == nil,
+              let window = NSApp.keyWindow ?? NSApp.mainWindow else {return .terminateCancel}
         terminationReplyPending = true
         pendingExit = .quit
+        presentExitAlert(for:window)
         return .terminateLater
     }
 
@@ -39,8 +44,9 @@ final class FilesAppDelegate:NSObject,NSApplicationDelegate,ObservableObject {
     }
 
     fileprivate func requestClose(_ window:NSWindow) {
-        guard case nil = pendingExit else {return}
+        guard case nil = pendingExit, activeExitAlert == nil else {return}
         pendingExit = .closeWindow(window)
+        presentExitAlert(for:window)
     }
 
     fileprivate func approveDiscardClose(_ window:NSWindow) {
@@ -55,34 +61,56 @@ final class FilesAppDelegate:NSObject,NSApplicationDelegate,ObservableObject {
         windowDelegates.removeValue(forKey:ObjectIdentifier(window))
     }
 
-    func keepEditing() {
-        let request = pendingExit
-        pendingExit = nil
-        if let request, case .quit = request {
-            terminationReplyPending = false
-            NSApp.reply(toApplicationShouldTerminate:false)
+    private func presentExitAlert(for window:NSWindow) {
+        let alert = NSAlert()
+        alert.alertStyle = .warning
+        alert.messageText = "Unsaved rule changes"
+        alert.informativeText = "Discarding closes without saving your rule changes."
+        alert.addButton(withTitle:"Keep Editing")
+        let discardButton = alert.addButton(withTitle:"Discard Changes")
+        discardButton.hasDestructiveAction = true
+        activeExitAlert = alert
+
+        let alertWindow = alert.window
+        escapeMonitor = NSEvent.addLocalMonitorForEvents(matching:.keyDown) { [weak alert] event in
+            guard event.keyCode == 53, let alert, event.window === alertWindow,
+                  let parent = alertWindow.sheetParent else {return event}
+            parent.endSheet(alert.window, returnCode:.alertFirstButtonReturn)
+            return nil
+        }
+
+        alert.beginSheetModal(for:window) { [weak self] response in
+            guard let self else {return}
+            self.removeEscapeMonitor()
+            // NSAlert dismisses the sheet after this handler returns. Finish any
+            // close only on the following main-loop turn.
+            DispatchQueue.main.async {
+                self.activeExitAlert = nil
+                self.finishExitPrompt(response)
+            }
         }
     }
 
-    func dismissExitPromptIfNeeded() {
-        if pendingExit != nil {keepEditing()}
+    private func removeEscapeMonitor() {
+        if let escapeMonitor {NSEvent.removeMonitor(escapeMonitor)}
+        escapeMonitor = nil
     }
 
-    func discardAndExit() {
+    private func finishExitPrompt(_ response:NSApplication.ModalResponse) {
         guard let request = pendingExit else {return}
         pendingExit = nil
+        let discard = response == .alertSecondButtonReturn
         switch request {
         case .quit:
-            store?.hasUnsavedRuleChanges = false
+            guard terminationReplyPending else {return}
+            if discard {store?.hasUnsavedRuleChanges = false}
             terminationReplyPending = false
-            NSApp.reply(toApplicationShouldTerminate:true)
+            NSApp.reply(toApplicationShouldTerminate:discard)
         case .closeWindow(let window):
+            guard discard else {return}
             approveDiscardClose(window)
             window.performClose(nil)
             discardCloseApprovals.remove(ObjectIdentifier(window))
-            // If AppKit or the prior delegate prevented closing, keep the live
-            // editor protected instead of marking its draft clean.
-            if window.isVisible {store?.hasUnsavedRuleChanges = true}
         }
     }
 }
@@ -156,19 +184,6 @@ private struct WindowCloseGuard: NSViewRepresentable {
     }
 }
 
-private struct ExitPromptModifier: ViewModifier {
-    @ObservedObject var appDelegate:FilesAppDelegate
-
-    func body(content:Content)->some View {
-        content.confirmationDialog("Unsaved rule changes",isPresented:Binding(get:{if case nil = appDelegate.pendingExit {false} else {true}},set:{showing in
-            if !showing {DispatchQueue.main.async {appDelegate.dismissExitPromptIfNeeded()}}
-        })) {
-            Button("Keep Editing",role:.cancel) {appDelegate.keepEditing()}.keyboardShortcut(.defaultAction)
-            Button("Discard Changes",role:.destructive) {appDelegate.discardAndExit()}
-        } message: {Text("Discarding closes without saving your rule changes.")}
-    }
-}
-
 @main struct PipFilesApp: App {
     @NSApplicationDelegateAdaptor(FilesAppDelegate.self) private var appDelegate
     @StateObject private var store = AppStore()
@@ -185,7 +200,6 @@ private struct ExitPromptModifier: ViewModifier {
             }.environmentObject(store)
                 .background(WindowCloseGuard(appDelegate:appDelegate,store:store).frame(width:1,height:1).allowsHitTesting(false).accessibilityHidden(true))
                 .frame(minWidth:900,minHeight:620)
-                .modifier(ExitPromptModifier(appDelegate:appDelegate))
                 .onDisappear {store.pauseBackground()}
                 .onChange(of:store.selected) { _, _ in if store.watching {store.pauseBackground()};store.preview = nil; store.watching = false; store.showHistory = false }
                 .onChange(of:store.showHistory) { _, showing in if showing {if store.watching {store.message = "Background rules paused while viewing History."};store.watching = false;store.preview = nil} }
