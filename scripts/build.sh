@@ -10,21 +10,14 @@ case "$edition" in
   pip-plus) name='Pip Files Plus'; version='0.2.0'; build='2';;
   *) echo 'Usage: build.sh [replica|baseline-plus|pip|pip-plus|baseline (legacy generic); default: replica]' >&2; exit 2;;
 esac
-build_args=(build -c release --jobs 2)
-if [[ ${PIP_FILES_BUILD_SYSTEM+x} ]]; then
-  case "$PIP_FILES_BUILD_SYSTEM" in
-    native|swiftbuild|xcode) build_args+=(--build-system "$PIP_FILES_BUILD_SYSTEM");;
-    *) echo 'PIP_FILES_BUILD_SYSTEM must be one of: native, swiftbuild, xcode' >&2; exit 2;;
-  esac
-fi
-swift "${build_args[@]}"
+swift build -c release --jobs 2 -debug-info-format none
 mkdir -p dist
 stage_root="$(mktemp -d "dist/.package-$edition.XXXXXX")"
 app="$stage_root/$name.app"
 mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources"
 cp .build/release/PipFiles "$app/Contents/MacOS/PipFiles"
-# Keep local checkout paths from DWARF out of distributed executables. Sign only
-# after stripping; the build cache retains its symbols for local diagnostics.
+# Release builds omit DWARF to avoid embedding local debug information. Keep
+# stripping, path checks, notice copying, and signing before package promotion.
 /usr/bin/strip -S "$app/Contents/MacOS/PipFiles"
 /usr/bin/strings "$app/Contents/MacOS/PipFiles" > "$stage_root/executable-strings.txt"
 if /usr/bin/grep -F -e "$PWD/" -e "$HOME/" "$stage_root/executable-strings.txt" > /dev/null; then

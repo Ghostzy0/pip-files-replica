@@ -22,15 +22,15 @@ open 'dist/Files Replica.app'
 
 With the package executable, you can start an unbundled development instance by running `swift run PipFiles --replica`. Packaged bundles use the edition marker embedded in their app bundle; development overrides do not select the packaged app's data folder.
 
-### Select a Swift build backend when needed
+### Release build symbols
 
-The script uses Swift's default backend when `PIP_FILES_BUILD_SYSTEM` is unset. On 25 October 2026, the host's default `swiftbuild` Release path stalled during `dsymutil`; the installed `swift build --help` listed `native`, `swiftbuild`, and `xcode` as supported backends. To retry with Swift's native backend:
+The packaging script uses Swift's normal backend selection and builds Release without DWARF debug information:
 
 ```sh
-PIP_FILES_BUILD_SYSTEM=native ./scripts/build.sh replica
+./scripts/build.sh replica
 ```
 
-This selects only Swift's build backend. The normal Release configuration, stripping, local-path scan, notice copying, code signing, signature verification, and atomic promotion still run. A successful command and package checks are required; the fallback is not itself evidence of a completed build. A bounded native-backend retry of the paired custom Neutral Plus build on this host also stalled during `dsymutil` before bundle assembly; this is not a Replica package result, and no root cause is established.
+This follows repeated local stalls during `dsymutil` with both tested Swift build backends; the cause has not been established. The Release build still uses normal optimization and proceeds through stripping, the local-path scan, notice copying, code signing, signature verification, and atomic promotion. The Debug configuration remains available for local diagnostics with debug information. A successful command and package checks are required; changing the symbol format is not itself evidence of a completed build.
 
 ## Try a disposable sample
 
