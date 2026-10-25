@@ -10,7 +10,14 @@ case "$edition" in
   pip-plus) name='Pip Files Plus'; version='0.2.0'; build='2';;
   *) echo 'Usage: build.sh [replica|baseline-plus|pip|pip-plus|baseline (legacy generic); default: replica]' >&2; exit 2;;
 esac
-swift build -c release --jobs 2
+build_args=(build -c release --jobs 2)
+if [[ ${PIP_FILES_BUILD_SYSTEM+x} ]]; then
+  case "$PIP_FILES_BUILD_SYSTEM" in
+    native|swiftbuild|xcode) build_args+=(--build-system "$PIP_FILES_BUILD_SYSTEM");;
+    *) echo 'PIP_FILES_BUILD_SYSTEM must be one of: native, swiftbuild, xcode' >&2; exit 2;;
+  esac
+fi
+swift "${build_args[@]}"
 mkdir -p dist
 stage_root="$(mktemp -d "dist/.package-$edition.XXXXXX")"
 app="$stage_root/$name.app"
