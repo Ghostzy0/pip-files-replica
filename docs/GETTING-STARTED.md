@@ -30,7 +30,7 @@ The script uses Swift's default backend when `PIP_FILES_BUILD_SYSTEM` is unset. 
 PIP_FILES_BUILD_SYSTEM=native ./scripts/build.sh replica
 ```
 
-This selects only Swift's build backend. The normal Release configuration, stripping, local-path scan, notice copying, code signing, signature verification, and atomic promotion still run. A successful command and package checks are required; the fallback is not itself evidence of a completed build.
+This selects only Swift's build backend. The normal Release configuration, stripping, local-path scan, notice copying, code signing, signature verification, and atomic promotion still run. A successful command and package checks are required; the fallback is not itself evidence of a completed build. A bounded native-backend retry of the paired custom Neutral Plus build on this host also stalled during `dsymutil` before bundle assembly; this is not a Replica package result, and no root cause is established.
 
 ## Try a disposable sample
 

@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- The packaging script accepts the validated `PIP_FILES_BUILD_SYSTEM` values `native`, `swiftbuild`, and `xcode`; leaving the variable unset preserves Swift’s tool default. Setup documents the native backend fallback after the observed host `dsymutil` stall. This is a build-path option only; Neutral Core source and native acceptance remain unchanged and pending. [Related issue](https://github.com/Ghostzy0/pip-files-replica/issues/9).
+- The packaging script accepts the validated `PIP_FILES_BUILD_SYSTEM` values `native`, `swiftbuild`, and `xcode`; leaving the variable unset preserves Swift’s tool default. Setup documents the native backend fallback after the observed host `dsymutil` stall. A bounded native-backend retry of the paired custom Neutral Plus build on this host also stalled during `dsymutil` before bundle assembly; no Replica package was built and no root cause is established. This is a build-path option only; Neutral Core source and native acceptance remain unchanged and pending. [Related issue](https://github.com/Ghostzy0/pip-files-replica/issues/9).
 
 - Neutral Core now protects dirty inline rule drafts on app Quit and window close with a Keep Editing default/cancel action and explicit Discard Changes choice. Native retest of the exact Replica candidate remains pending; this source update does not establish acceptance. Related: [issue #9](https://github.com/Ghostzy0/pip-files-replica/issues/9).
 
