@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Neutral Core now protects dirty inline rule drafts on app Quit and window close with a Keep Editing default/cancel action and explicit Discard Changes choice. Native retest of the exact Replica candidate remains pending; this source update does not establish acceptance. Related: [issue #9](https://github.com/Ghostzy0/pip-files-replica/issues/9).
+
 - The Files Replica package includes the repository `LICENSE` and `THIRD-PARTY-NOTICES.md` under `Contents/Resources` before code signing. The Neutral Core candidate was built from public-source head `6f8255f9c13a042c17c4bbdb409deafea1989785` on macOS 27.0.1 arm64. A fresh package restore on 25 October verified archive structure and CRCs, bundle identity, executable hash and mode, source-matched notice bytes, and the ad-hoc signature with strict deep verification. This is package verification only: this exact candidate has not been run in the native GUI, and native acceptance and the binary release gate remain pending. This makes no broader legal-compliance claim. See [issue #7](https://github.com/Ghostzy0/pip-files-replica/issues/7).
 
 - The Replica preview now gives guidance that stays accurate before and after Apply: review proposed changes first; applied actions are recorded in History. This copy-only correction addresses [issue #5](https://github.com/Ghostzy0/pip-files-replica/issues/5). A new native Move → Apply → History → Undo retest remains pending; the existing keyboard issue remains separate.
