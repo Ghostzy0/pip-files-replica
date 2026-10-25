@@ -2,8 +2,186 @@ import SwiftUI
 import AppKit
 import FilesCore
 
-final class FilesAppDelegate:NSObject,NSApplicationDelegate {
+@MainActor
+final class FilesAppDelegate:NSObject,NSApplicationDelegate,ObservableObject {
+    enum ExitRequest {
+        case quit
+        case closeWindow(NSWindow)
+    }
+
+    @Published private(set) var pendingExit:ExitRequest?
+    private weak var store:AppStore?
+    private var windowDelegates:[ObjectIdentifier:WindowCloseDelegateProxy] = [:]
+    private var discardCloseApprovals:Set<ObjectIdentifier> = []
+    private var terminationReplyPending = false
+    private var activeExitAlert:NSAlert?
+    private var escapeMonitor:Any?
+
+    func applicationShouldTerminate(_ sender:NSApplication)->NSApplication.TerminateReply {
+        guard !terminationReplyPending else {return .terminateCancel}
+        // A window-close confirmation already owns the shared prompt. Cancel this
+        // overlapping quit request; the user can retry Quit after resolving it.
+        if case .closeWindow = pendingExit {return .terminateCancel}
+        guard FeatureEdition.current.referenceLayout, store?.hasUnsavedRuleChanges == true else {return .terminateNow}
+        guard pendingExit == nil, activeExitAlert == nil,
+              let window = NSApp.keyWindow ?? NSApp.mainWindow else {return .terminateCancel}
+        terminationReplyPending = true
+        pendingExit = .quit
+        presentExitAlert(for:window)
+        return .terminateLater
+    }
+
     func applicationShouldTerminateAfterLastWindowClosed(_ sender:NSApplication)->Bool {true}
+
+    func attach(store:AppStore, to window:NSWindow) {
+        guard FeatureEdition.current.referenceLayout else {return}
+        self.store = store
+        let key = ObjectIdentifier(window)
+        if let proxy = windowDelegates[key], window.delegate === proxy {return}
+        let proxy = WindowCloseDelegateProxy(owner:self, store:store, forwarding:window.delegate)
+        windowDelegates[key] = proxy
+        window.delegate = proxy
+    }
+
+    fileprivate func requestClose(_ window:NSWindow) {
+        guard case nil = pendingExit, activeExitAlert == nil else {return}
+        pendingExit = .closeWindow(window)
+        presentExitAlert(for:window)
+    }
+
+    fileprivate func approveDiscardClose(_ window:NSWindow) {
+        discardCloseApprovals.insert(ObjectIdentifier(window))
+    }
+
+    fileprivate func takeDiscardCloseApproval(for window:NSWindow)->Bool {
+        discardCloseApprovals.remove(ObjectIdentifier(window)) != nil
+    }
+
+    fileprivate func windowDidClose(_ window:NSWindow) {
+        windowDelegates.removeValue(forKey:ObjectIdentifier(window))
+    }
+
+    private func presentExitAlert(for window:NSWindow) {
+        let alert = NSAlert()
+        alert.alertStyle = .warning
+        alert.messageText = "Unsaved rule changes"
+        alert.informativeText = "Discarding closes without saving your rule changes."
+        alert.addButton(withTitle:"Keep Editing")
+        let discardButton = alert.addButton(withTitle:"Discard Changes")
+        discardButton.hasDestructiveAction = true
+        activeExitAlert = alert
+
+        let alertWindow = alert.window
+        escapeMonitor = NSEvent.addLocalMonitorForEvents(matching:.keyDown) { [weak alert] event in
+            guard event.keyCode == 53, let alert, event.window === alertWindow,
+                  let parent = alertWindow.sheetParent else {return event}
+            parent.endSheet(alert.window, returnCode:.alertFirstButtonReturn)
+            return nil
+        }
+
+        alert.beginSheetModal(for:window) { [weak self] response in
+            guard let self else {return}
+            self.removeEscapeMonitor()
+            // NSAlert dismisses the sheet after this handler returns. Finish any
+            // close only on the following main-loop turn.
+            DispatchQueue.main.async {
+                self.activeExitAlert = nil
+                self.finishExitPrompt(response)
+            }
+        }
+    }
+
+    private func removeEscapeMonitor() {
+        if let escapeMonitor {NSEvent.removeMonitor(escapeMonitor)}
+        escapeMonitor = nil
+    }
+
+    private func finishExitPrompt(_ response:NSApplication.ModalResponse) {
+        guard let request = pendingExit else {return}
+        pendingExit = nil
+        let discard = response == .alertSecondButtonReturn
+        switch request {
+        case .quit:
+            guard terminationReplyPending else {return}
+            if discard {store?.hasUnsavedRuleChanges = false}
+            terminationReplyPending = false
+            NSApp.reply(toApplicationShouldTerminate:discard)
+        case .closeWindow(let window):
+            guard discard else {return}
+            approveDiscardClose(window)
+            window.performClose(nil)
+            discardCloseApprovals.remove(ObjectIdentifier(window))
+        }
+    }
+}
+
+@MainActor
+private final class WindowCloseDelegateProxy:NSObject,NSWindowDelegate {
+    weak var owner:FilesAppDelegate?
+    private weak var store:AppStore?
+    private let forwarding: (any NSWindowDelegate)?
+
+    init(owner:FilesAppDelegate, store:AppStore, forwarding:(any NSWindowDelegate)?) {
+        self.owner = owner
+        self.store = store
+        self.forwarding = forwarding
+    }
+
+    func windowShouldClose(_ sender:NSWindow)->Bool {
+        if owner?.takeDiscardCloseApproval(for:sender) == true {
+            let allowed = forwarding?.windowShouldClose?(sender) ?? true
+            if allowed {store?.hasUnsavedRuleChanges = false}
+            return allowed
+        }
+        if FeatureEdition.current.referenceLayout, store?.hasUnsavedRuleChanges == true {
+            owner?.requestClose(sender)
+            return false
+        }
+        return forwarding?.windowShouldClose?(sender) ?? true
+    }
+
+    func windowWillClose(_ notification:Notification) {
+        forwarding?.windowWillClose?(notification)
+        if let window = notification.object as? NSWindow {owner?.windowDidClose(window)}
+    }
+
+    override func responds(to selector:Selector!)->Bool {
+        super.responds(to:selector) || (forwarding?.responds(to:selector) ?? false)
+    }
+
+    override func forwardingTarget(for selector:Selector!)->Any? {
+        if forwarding?.responds(to:selector) == true {return forwarding}
+        return super.forwardingTarget(for:selector)
+    }
+}
+
+private final class WindowCloseGuardView:NSView {
+    weak var appDelegate:FilesAppDelegate?
+    weak var store:AppStore?
+
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        if let window, let store {appDelegate?.attach(store:store, to:window)}
+    }
+}
+
+private struct WindowCloseGuard: NSViewRepresentable {
+    let appDelegate:FilesAppDelegate
+    let store:AppStore
+
+    func makeNSView(context:Context)->NSView {
+        let view = WindowCloseGuardView()
+        view.appDelegate = appDelegate
+        view.store = store
+        return view
+    }
+
+    func updateNSView(_ nsView:NSView, context:Context) {
+        guard let view = nsView as? WindowCloseGuardView else {return}
+        view.appDelegate = appDelegate
+        view.store = store
+        if let window = view.window {appDelegate.attach(store:store, to:window)}
+    }
 }
 
 @main struct PipFilesApp: App {
@@ -20,6 +198,7 @@ final class FilesAppDelegate:NSObject,NSApplicationDelegate {
                 else if baseline { BaselineView() }
                 else { PipView() }
             }.environmentObject(store)
+                .background(WindowCloseGuard(appDelegate:appDelegate,store:store).frame(width:1,height:1).allowsHitTesting(false).accessibilityHidden(true))
                 .frame(minWidth:900,minHeight:620)
                 .onDisappear {store.pauseBackground()}
                 .onChange(of:store.selected) { _, _ in if store.watching {store.pauseBackground()};store.preview = nil; store.watching = false; store.showHistory = false }

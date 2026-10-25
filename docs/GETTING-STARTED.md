@@ -22,6 +22,16 @@ open 'dist/Files Replica.app'
 
 With the package executable, you can start an unbundled development instance by running `swift run PipFiles --replica`. Packaged bundles use the edition marker embedded in their app bundle; development overrides do not select the packaged app's data folder.
 
+### Release build symbols
+
+The packaging script uses Swift's normal backend selection and builds Release without DWARF debug information:
+
+```sh
+./scripts/build.sh replica
+```
+
+This follows repeated local stalls during `dsymutil` with both tested Swift build backends; the cause has not been established. The Release build still uses normal optimization and proceeds through stripping, the local-path scan, notice copying, code signing, signature verification, and atomic promotion. The Debug configuration remains available for local diagnostics with debug information. A successful command and package checks are required; changing the symbol format is not itself evidence of a completed build.
+
 ## Try a disposable sample
 
 1. Use the app's sample action to create its synthetic workspace.
