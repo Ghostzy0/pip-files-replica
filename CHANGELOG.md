@@ -1,6 +1,7 @@
 # Changes
 
 ## Unreleased
+- The unsaved-draft confirmation now observes delegate state through a dedicated SwiftUI view modifier, addressing the reproduced missing-alert update. Direct native retest remains pending. [Related issue #9](https://github.com/Ghostzy0/pip-files-replica/issues/9).
 
 - Release packaging now uses SwiftPM's default backend with `-debug-info-format none` after both attempted backends stalled during `dsymutil` on this host. The root cause remains unknown; the earlier attempts produced no verified package. The Release script still performs stripping, local-path scanning, notice copying, signing, signature verification and atomic promotion. Debug builds remain available for diagnostics. Neutral Core package and native acceptance remain pending. [Related issue](https://github.com/Ghostzy0/pip-files-replica/issues/9).
 

@@ -156,6 +156,19 @@ private struct WindowCloseGuard: NSViewRepresentable {
     }
 }
 
+private struct ExitPromptModifier: ViewModifier {
+    @ObservedObject var appDelegate:FilesAppDelegate
+
+    func body(content:Content)->some View {
+        content.confirmationDialog("Unsaved rule changes",isPresented:Binding(get:{if case nil = appDelegate.pendingExit {false} else {true}},set:{showing in
+            if !showing {DispatchQueue.main.async {appDelegate.dismissExitPromptIfNeeded()}}
+        })) {
+            Button("Keep Editing",role:.cancel) {appDelegate.keepEditing()}.keyboardShortcut(.defaultAction)
+            Button("Discard Changes",role:.destructive) {appDelegate.discardAndExit()}
+        } message: {Text("Discarding closes without saving your rule changes.")}
+    }
+}
+
 @main struct PipFilesApp: App {
     @NSApplicationDelegateAdaptor(FilesAppDelegate.self) private var appDelegate
     @StateObject private var store = AppStore()
@@ -172,12 +185,7 @@ private struct WindowCloseGuard: NSViewRepresentable {
             }.environmentObject(store)
                 .background(WindowCloseGuard(appDelegate:appDelegate,store:store).frame(width:1,height:1).allowsHitTesting(false).accessibilityHidden(true))
                 .frame(minWidth:900,minHeight:620)
-                .confirmationDialog("Unsaved rule changes",isPresented:Binding(get:{if case nil = appDelegate.pendingExit {false} else {true}},set:{showing in
-                    if !showing {DispatchQueue.main.async {appDelegate.dismissExitPromptIfNeeded()}}
-                })) {
-                    Button("Keep Editing",role:.cancel) {appDelegate.keepEditing()}.keyboardShortcut(.defaultAction)
-                    Button("Discard Changes",role:.destructive) {appDelegate.discardAndExit()}
-                } message: {Text("Discarding closes without saving your rule changes.")}
+                .modifier(ExitPromptModifier(appDelegate:appDelegate))
                 .onDisappear {store.pauseBackground()}
                 .onChange(of:store.selected) { _, _ in if store.watching {store.pauseBackground()};store.preview = nil; store.watching = false; store.showHistory = false }
                 .onChange(of:store.showHistory) { _, showing in if showing {if store.watching {store.message = "Background rules paused while viewing History."};store.watching = false;store.preview = nil} }
